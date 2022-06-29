@@ -249,13 +249,19 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
             instance.p_point_.push_back(p);
         }
 
+        std::random_device rd;
+
         // This generates instances where the same 3D point is observed twice in a generalized camera
         // This is degenerate case for the 3Q3 based gp3p/gp4ps solver unless specifically handled.
         if (options.generalized_ && options.generalized_duplicate_obs_) {
             std::vector<int> ind = {0, 1, 2, 3};
             assert(options.n_point_point_ >= 4);
 
-            std::random_shuffle(ind.begin(), ind.end());
+            std::mt19937 g(rd());
+            std::shuffle(ind.begin(),
+                         ind.end(),
+                         g);
+//            std::random_shuffle(ind.begin(), ind.end());
             instance.X_point_[ind[1]] = instance.X_point_[ind[0]];
             instance.x_point_[ind[1]] = (instance.pose_gt.R() * instance.X_point_[ind[0]] + instance.pose_gt.t -
                                          instance.scale_gt * instance.p_point_[ind[1]])

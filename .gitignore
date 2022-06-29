@@ -4,6 +4,11 @@
 *.o
 *.obj
 
+.idea
+.DS_Store
+cmake-build-debug
+b
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
