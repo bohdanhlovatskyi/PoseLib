@@ -5,12 +5,14 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 
 namespace poselib {
 
 template <typename Solver> BenchmarkResult benchmark(int n_problems, const ProblemOptions &options, double tol = 1e-6) {
 
     std::vector<AbsolutePoseProblemInstance> problem_instances;
+    std::vector<double> errors;
     generate_abspose_problems(n_problems, &problem_instances, options);
 
     BenchmarkResult result;
@@ -41,7 +43,7 @@ template <typename Solver> BenchmarkResult benchmark(int n_problems, const Probl
             pose_error = std::min(pose_error, Solver::validator::compute_pose_error(instance, pose, 1.0));
         }
 
-        std::cout << pose_error << std::endl;
+        errors.push_back(pose_error);
 
         if (pose_error < tol)
             result.found_gt_pose_++;
@@ -66,6 +68,16 @@ template <typename Solver> BenchmarkResult benchmark(int n_problems, const Probl
 
     std::sort(runtimes.begin(), runtimes.end());
     result.runtime_ns_ = runtimes[runtimes.size() / 2];
+
+    double me = 0.0;
+    for (double error : errors) {
+        if (error < std::numeric_limits<double>::max()) {
+            me += error;
+        }
+    }
+
+    std::cout << "Mean error: " << me / errors.size() << std::endl;
+
     std::cout << "\r                                                                                \r";
     return result;
 }
@@ -321,8 +333,8 @@ int main() {
     up2p_opt.n_point_point_ = 2;
     up2p_opt.n_point_line_ = 0;
     up2p_opt.upright_ = true;
-    up2p_opt.dev_ = 0.5;
-    results.push_back(poselib::benchmark<poselib::SolverUP2P>(3, up2p_opt, tol));
+    up2p_opt.dev_ = 0.1;
+    results.push_back(poselib::benchmark<poselib::SolverUP2P>(10000, up2p_opt, tol));
 
     display_result(results);
 

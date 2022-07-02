@@ -11,8 +11,8 @@ static const double kPI = 3.14159265358979323846;
 
 double CalibPoseValidator::compute_pose_error(const AbsolutePoseProblemInstance &instance, const CameraPose &pose,
                                               double scale) {
-    std::cout << instance.pose_gt.R() << std::endl << std::endl;
-    std::cout << pose.R() << std::endl << std::endl << std::endl;
+//    std::cout << instance.pose_gt.R() << std::endl << std::endl;
+//    std::cout << pose.R() << std::endl << std::endl << std::endl;
 
     return (instance.pose_gt.R() - pose.R()).norm() + (instance.pose_gt.t - pose.t).norm() +
            std::abs(instance.scale_gt - scale);
@@ -189,7 +189,7 @@ std::vector<Eigen::Matrix3d> add_some_noise(double deviation) {
     double x = distr(gen);
 //    std::cout << "x: " << x << " for deviation: " << deviation << std::endl;
     double z = x > 0 ? deviation - x : -(deviation + x);
-    std::cout << "x: " << x << " z: " << z << std::endl;
+//    std::cout << "x: " << x << " z: " << z << std::endl;
 
     double cx = std::cos(x*3.14159/180);
     double sx = -1*std::sin(x*3.14159/180);
