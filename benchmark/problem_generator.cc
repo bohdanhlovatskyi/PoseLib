@@ -176,13 +176,48 @@ bool RadialPoseValidator::is_valid(const AbsolutePoseProblemInstance &instance, 
     return true;
 }
 
-void set_random_pose(CameraPose &pose, bool upright, bool planar) {
+
+std::vector<Eigen::Matrix3d> add_some_noise(double deviation) {
+    Eigen::Matrix3d Rz, Rx;
+
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_real_distribution<> distr(-deviation, deviation); // define the range
+    double x = distr(gen);
+//    std::cout << "x: " << x << " for deviation: " << deviation << std::endl;
+    double z = x > 0 ? deviation - x : -(deviation + x);
+
+    double cx = std::cos(x*3.14159/180);
+    double sx = -1*std::sin(x*3.14159/180);
+
+    double cz = std::cos(z*3.14159/180);
+    double sz = -1*std::sin(z*3.14159/180);
+
+    Rz << cz, -cz, 0.0, sz, cz, 0.0, 0.0, 0.0, 1.0;
+    Rx << 1.0, 0.0, 0.0, 0.0, cx, -sx, 0.0, sx, cx;
+
+    return std::vector<Eigen::Matrix3d>{Rx, Rz};
+}
+
+void set_random_pose(CameraPose &pose, bool upright, bool planar, double deviation) {
     if (upright) {
         Eigen::Vector2d r;
         r.setRandom().normalize();
+
         Eigen::Matrix3d R;
         R << r(0), 0.0, r(1), 0.0, 1.0, 0.0, -r(1), 0.0, r(0); // y-gravity
         // pose.R << r(0), r(1), 0.0, -r(1), r(0), 0.0, 0.0, 0.0, 1.0; // z-gravity
+
+        if (deviation) {
+            auto noise = add_some_noise(deviation);
+            auto Rx = std::move(noise[0]);
+            auto Rz = std::move(noise[1]);
+
+//            std::cout << Rz << std::endl << std::endl << Rx << std::endl << std::endl;
+
+            R = Rz * Rx * R;
+        }
+
         pose.q = rotmat_to_quat(R);
     } else {
         pose.q = Eigen::Quaternion<double>::UnitRandom().coeffs();
@@ -211,7 +246,7 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
 
     for (int i = 0; i < n_problems; ++i) {
         AbsolutePoseProblemInstance instance;
-        set_random_pose(instance.pose_gt, options.upright_, options.planar_);
+        set_random_pose(instance.pose_gt, options.upright_, options.planar_, options.dev_);
 
         if (options.unknown_scale_) {
             instance.scale_gt = scale_gen(random_engine);
@@ -282,6 +317,7 @@ void generate_abspose_problems(int n_problems, std::vector<AbsolutePoseProblemIn
             if (options.generalized_) {
                 p << offset_gen(random_engine), offset_gen(random_engine), offset_gen(random_engine);
             }
+
             X = instance.scale_gt * p + x * depth_gen(random_engine);
             X = instance.pose_gt.R().transpose() * (X - instance.pose_gt.t);
 
@@ -397,7 +433,7 @@ void generate_relpose_problems(int n_problems, std::vector<RelativePoseProblemIn
 
     for (int i = 0; i < n_problems; ++i) {
         RelativePoseProblemInstance instance;
-        set_random_pose(instance.pose_gt, options.upright_, options.planar_);
+        set_random_pose(instance.pose_gt, options.upright_, options.planar_, options.dev_);
 
         if (options.unknown_scale_) {
             instance.scale_gt = scale_gen(random_engine);
@@ -475,7 +511,7 @@ void generate_homography_problems(int n_problems, std::vector<RelativePoseProble
 
     while (problem_instances->size() < n_problems) {
         RelativePoseProblemInstance instance;
-        set_random_pose(instance.pose_gt, options.upright_, options.planar_);
+        set_random_pose(instance.pose_gt, options.upright_, options.planar_, options.dev_);
 
         if (options.unknown_scale_) {
             instance.scale_gt = scale_gen(random_engine);

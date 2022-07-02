@@ -104,6 +104,7 @@ struct ProblemOptions {
     double max_scale_ = 10.0;
     double min_focal_ = 100.0;
     double max_focal_ = 1000.0;
+    double dev_ = 0.0;
     std::string additional_name_ = "";
 };
 
