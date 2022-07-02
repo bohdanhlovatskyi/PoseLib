@@ -321,8 +321,8 @@ int main() {
     up2p_opt.n_point_point_ = 2;
     up2p_opt.n_point_line_ = 0;
     up2p_opt.upright_ = true;
-    up2p_opt.dev_ = 2;
-    results.push_back(poselib::benchmark<poselib::SolverUP2P>(10, up2p_opt, tol));
+    up2p_opt.dev_ = 0.5;
+    results.push_back(poselib::benchmark<poselib::SolverUP2P>(3, up2p_opt, tol));
 
     display_result(results);
 
